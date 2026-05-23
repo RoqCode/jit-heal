@@ -14,11 +14,16 @@ app.get("/entry", parseLanguage, (_req, res) => {
 
 app.use(
   (
-    _err: unknown,
+    err: unknown,
     _req: express.Request,
     res: express.Response,
-    _next: express.NextFunction,
+    next: express.NextFunction,
   ) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+
+    console.error(err);
     res.sendStatus(500);
   },
 );
