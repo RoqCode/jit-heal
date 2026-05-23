@@ -15,7 +15,11 @@ export const parseLanguage: express.RequestHandler = async (req, res, next) => {
     const { value } = await withJITFix(
       "parseLanguage",
       () => setActiveLanguage(langHeader),
-      { langHeader, config: LANGUAGE_CONFIG },
+      {
+        langHeader,
+        config: LANGUAGE_CONFIG,
+        source: setActiveLanguage.toString(),
+      },
     );
 
     res.locals.language = value;

@@ -31,12 +31,15 @@ export const withJITFix = async (
       fnName,
       args,
       failingCall: fn.toString(),
+      source: typeof args.source === "string" ? args.source : undefined,
     });
 
     if (!fix) {
       console.log("no valid fix recieved -- throwing original error");
       throw error;
     }
+
+    console.log("LLM fix response:\n", fix);
 
     if (
       typeof args.langHeader !== "string" ||
