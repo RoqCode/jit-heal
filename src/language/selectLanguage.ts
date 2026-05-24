@@ -1,6 +1,6 @@
-import { LANGUAGE_CONFIG } from "../middleware/languageConfig";
+import { LANGUAGE_CONFIG } from "./languageConfig";
 
-export const setActiveLanguage = (langHeader: string): string => {
+export const selectLanguage = (langHeader: string): string => {
   const entries = langHeader.split(",");
 
   const parsed = entries.map((entry) => {

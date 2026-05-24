@@ -1,7 +1,7 @@
 import express from "express";
-import { LANGUAGE_CONFIG } from "./languageConfig";
-import { setActiveLanguage } from "../utils/setActiveLanguage";
-import { withJITFix } from "../utils/withJITFix";
+import { withJitHeal } from "../jit/withJitHeal";
+import { LANGUAGE_CONFIG } from "../language/languageConfig";
+import { selectLanguage } from "../language/selectLanguage";
 
 export const parseLanguage: express.RequestHandler = async (req, res, next) => {
   try {
@@ -12,13 +12,13 @@ export const parseLanguage: express.RequestHandler = async (req, res, next) => {
       return next();
     }
 
-    const { value } = await withJITFix(
+    const { value } = await withJitHeal(
       "parseLanguage",
-      () => setActiveLanguage(langHeader),
+      () => selectLanguage(langHeader),
       {
         langHeader,
         config: LANGUAGE_CONFIG,
-        source: setActiveLanguage.toString(),
+        source: selectLanguage.toString(),
       },
     );
 

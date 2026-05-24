@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-export const fingerprint = (fnName: string, error: unknown) => {
+export const fingerprintFailure = (fnName: string, error: unknown) => {
   const name = error instanceof Error ? error.name : typeof error;
   const message = error instanceof Error ? error.message : String(error);
   const normalizedMessage = message.replace(/"[^"]*"/g, "<…>");

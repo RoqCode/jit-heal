@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx src/index.ts",
-    "alarm:mock": "tsx src/mockAlarmServer.ts",
+    "alarm:mock": "tsx src/dev/mockAlarmServer.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"

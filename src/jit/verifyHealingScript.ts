@@ -1,41 +1,41 @@
 import vm from "node:vm";
 
-export type VerifyFixConfig = {
+export type HealingConfig = {
   available: string[];
 };
 
-type VerifyFixResult =
+type VerifyHealingScriptResult =
   | { ok: true; value: string }
   | { ok: false; reason: string };
 
-type VerifyFixSandbox = {
+type HealingScriptSandbox = {
   result: unknown;
   headerValue: string;
-  config: VerifyFixConfig;
+  config: HealingConfig;
 };
 
-export const verifyFix = (
-  fixSource: string,
+export const verifyHealingScript = (
+  healingScript: string,
   headerValue: string,
-  config: VerifyFixConfig,
-): VerifyFixResult => {
-  const sandbox: VerifyFixSandbox = { result: undefined, headerValue, config };
+  config: HealingConfig,
+): VerifyHealingScriptResult => {
+  const sandbox: HealingScriptSandbox = { result: undefined, headerValue, config };
   const context = vm.createContext(sandbox);
 
-  const code = `${fixSource}; result = heal(headerValue, config);`;
+  const code = `${healingScript}; result = heal(headerValue, config);`;
 
   try {
     new vm.Script(code).runInContext(context, { timeout: 50 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, reason: `fix threw exception: ${message}` };
+    return { ok: false, reason: `healing script threw exception: ${message}` };
   }
 
   const out = sandbox.result;
   if (typeof out !== "string" || !config.available.includes(out)) {
     return {
       ok: false,
-      reason: `fix did not return valid value: ${JSON.stringify(out)}`,
+      reason: `healing script did not return valid value: ${JSON.stringify(out)}`,
     };
   }
 

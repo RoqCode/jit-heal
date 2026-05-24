@@ -79,7 +79,7 @@ const createIssue = async (
   repository: GitHubRepository,
   fnName: string,
   id: string,
-  fix: string,
+  healingScript: string,
 ): Promise<GitHubIssue> => {
   return githubRequest<GitHubIssue>(
     `/repos/${repository.owner}/${repository.repo}/issues`,
@@ -88,13 +88,17 @@ const createIssue = async (
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: `[jit-heal:${id}] ${fnName}`,
-        body: `A verified JIT fix was generated for \`${fnName}\`.\n\nFingerprint: \`${id}\`\n\n\`\`\`\n${fix}\n\`\`\``,
+        body: `A verified JIT Heal script was generated for \`${fnName}\`.\n\nFingerprint: \`${id}\`\n\n\`\`\`\n${healingScript}\n\`\`\``,
       }),
     },
   );
 };
 
-export const openIssue = (fnName: string, id: string, fix: string): void => {
+export const openGitHubIssue = (
+  fnName: string,
+  id: string,
+  healingScript: string,
+): void => {
   void (async () => {
     const repository = getRepository();
     if (!repository) {
@@ -112,7 +116,7 @@ export const openIssue = (fnName: string, id: string, fix: string): void => {
       return;
     }
 
-    const issue = await createIssue(repository, fnName, id, fix);
+    const issue = await createIssue(repository, fnName, id, healingScript);
     console.log(`GitHub issue opened for ${id}: ${issue.html_url}`);
   })().catch((error: unknown) => {
     console.error("GitHub issue creation failed", error);

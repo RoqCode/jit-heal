@@ -13,7 +13,7 @@ const serializeError = (error: unknown) => {
   };
 };
 
-export const fireAlarm = (fnName: string, error: unknown, id: string) => {
+export const sendAlarm = (fnName: string, error: unknown, id: string) => {
   void fetch("http://localhost:3001/alarms", {
     method: "POST",
     headers: { "content-type": "application/json" },
