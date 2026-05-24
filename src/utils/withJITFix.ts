@@ -1,7 +1,10 @@
 import { fingerprint } from "./fingerprint";
 import { fireAlarm } from "./fireAlarm";
 import { LLMHeal } from "./LLMHeal";
+import { openIssue } from "./openIssue";
 import { verifyFix, type VerifyFixConfig } from "./verifyFix";
+
+const fixCache = new Map<string, string>();
 
 const isVerifyFixConfig = (value: unknown): value is VerifyFixConfig => {
   return (
@@ -27,12 +30,17 @@ export const withJITFix = async (
     const id = fingerprint(fnName, error);
     fireAlarm(fnName, error, id);
 
-    const fix = await LLMHeal(error, {
-      fnName,
-      args,
-      failingCall: fn.toString(),
-      source: typeof args.source === "string" ? args.source : undefined,
-    });
+    let fix = fixCache.get(id);
+    const fromCache = Boolean(fix);
+
+    if (!fromCache) {
+      fix = await LLMHeal(error, {
+        fnName,
+        args,
+        failingCall: fn.toString(),
+        source: typeof args.source === "string" ? args.source : undefined,
+      });
+    }
 
     if (!fix) {
       console.log("no valid fix recieved -- throwing original error");
@@ -55,6 +63,14 @@ export const withJITFix = async (
       );
       throw error;
     }
+
+    if (!fromCache) {
+      fixCache.set(id, fix);
+      openIssue(fnName, id, fix);
+    } else {
+      console.log("cache hit -- using known fix instead of calling LLM");
+    }
+
     console.log(`fix was successful! language: "${verdict.value}"`);
     return { value: verdict.value, healed: true };
   }
