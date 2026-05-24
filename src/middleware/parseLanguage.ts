@@ -1,5 +1,6 @@
 import express from "express";
 import { withJitHeal } from "../jit/withJitHeal";
+import { verifyHealingScript } from "../jit/verifyHealingScript";
 import { LANGUAGE_CONFIG } from "../language/languageConfig";
 import { selectLanguage } from "../language/selectLanguage";
 
@@ -16,9 +17,21 @@ export const parseLanguage: express.RequestHandler = async (req, res, next) => {
       "parseLanguage",
       () => selectLanguage(langHeader),
       {
-        langHeader,
-        config: LANGUAGE_CONFIG,
-        source: selectLanguage.toString(),
+        context: {
+          signature: "function heal(headerValue, config)",
+          returnContract: "Return one of config.available.",
+          langHeader,
+          config: LANGUAGE_CONFIG,
+          source: selectLanguage.toString(),
+        },
+        verify: (healingScript) =>
+          verifyHealingScript<string>(
+            healingScript,
+            [langHeader, LANGUAGE_CONFIG],
+            (value): value is string =>
+              typeof value === "string" &&
+              LANGUAGE_CONFIG.available.includes(value),
+          ),
       },
     );
 

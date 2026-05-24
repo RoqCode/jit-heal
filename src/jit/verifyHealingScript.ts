@@ -1,28 +1,23 @@
 import vm from "node:vm";
 
-export type HealingConfig = {
-  available: string[];
-};
-
-type VerifyHealingScriptResult =
-  | { ok: true; value: string }
+type VerifyHealingScriptResult<T> =
+  | { ok: true; value: T }
   | { ok: false; reason: string };
 
 type HealingScriptSandbox = {
   result: unknown;
-  headerValue: string;
-  config: HealingConfig;
+  args: unknown[];
 };
 
-export const verifyHealingScript = (
+export const verifyHealingScript = <T>(
   healingScript: string,
-  headerValue: string,
-  config: HealingConfig,
-): VerifyHealingScriptResult => {
-  const sandbox: HealingScriptSandbox = { result: undefined, headerValue, config };
+  args: unknown[],
+  isValid: (value: unknown) => value is T,
+): VerifyHealingScriptResult<T> => {
+  const sandbox: HealingScriptSandbox = { result: undefined, args };
   const context = vm.createContext(sandbox);
 
-  const code = `${healingScript}; result = heal(headerValue, config);`;
+  const code = `${healingScript}; result = heal(...args);`;
 
   try {
     new vm.Script(code).runInContext(context, { timeout: 50 });
@@ -32,7 +27,7 @@ export const verifyHealingScript = (
   }
 
   const out = sandbox.result;
-  if (typeof out !== "string" || !config.available.includes(out)) {
+  if (!isValid(out)) {
     return {
       ok: false,
       reason: `healing script did not return valid value: ${JSON.stringify(out)}`,

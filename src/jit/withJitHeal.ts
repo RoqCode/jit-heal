@@ -2,29 +2,22 @@ import { sendAlarm } from "../integrations/alarmClient";
 import { openGitHubIssue } from "../integrations/githubIssues";
 import { fingerprintFailure } from "./fingerprintFailure";
 import { requestHealingScript } from "./requestHealingScript";
-import {
-  verifyHealingScript,
-  type HealingConfig,
-} from "./verifyHealingScript";
 
 const healingScriptCache = new Map<string, string>();
 
-const isHealingConfig = (value: unknown): value is HealingConfig => {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "available" in value &&
-    Array.isArray(value.available) &&
-    value.available.every((entry) => typeof entry === "string")
-  );
+type JitHealOptions<T> = {
+  context: Record<string, unknown>;
+  verify: (
+    healingScript: string,
+  ) => { ok: true; value: T } | { ok: false; reason: string };
 };
 
-export const withJitHeal = async (
+export const withJitHeal = async <T>(
   fnName: string,
-  fn: () => string,
-  args: Record<string, unknown>,
+  fn: () => T,
+  options: JitHealOptions<T>,
 ): Promise<{
-  value: string;
+  value: T;
   healed: boolean;
 }> => {
   try {
@@ -39,27 +32,21 @@ export const withJitHeal = async (
     if (!fromCache) {
       healingScript = await requestHealingScript(error, {
         fnName,
-        args,
+        ...options.context,
         failingCall: fn.toString(),
-        source: typeof args.source === "string" ? args.source : undefined,
       });
     }
 
     if (!healingScript) {
-      console.log("no valid healing script received -- throwing original error");
+      console.log(
+        "no valid healing script received -- throwing original error",
+      );
       throw error;
     }
 
     console.log("LLM healing script response:\n", healingScript);
 
-    if (
-      typeof args.langHeader !== "string" ||
-      !isHealingConfig(args.config)
-    ) {
-      throw error;
-    }
-
-    const verdict = verifyHealingScript(healingScript, args.langHeader, args.config);
+    const verdict = options.verify(healingScript);
     if (!verdict.ok) {
       console.log(
         `healing script was not successful (${verdict.reason}) -- throwing original error`,
@@ -71,7 +58,9 @@ export const withJitHeal = async (
       healingScriptCache.set(id, healingScript);
       openGitHubIssue(fnName, id, healingScript);
     } else {
-      console.log("cache hit -- using known healing script instead of calling LLM");
+      console.log(
+        "cache hit -- using known healing script instead of calling LLM",
+      );
     }
 
     console.log(`JIT Heal was successful! language: "${verdict.value}"`);
