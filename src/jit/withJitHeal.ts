@@ -56,7 +56,7 @@ export const withJitHeal = async <T>(
 
     if (!fromCache) {
       healingScriptCache.set(id, healingScript);
-      openGitHubIssue(fnName, id, healingScript);
+      openGitHubIssue(fnName, id, healingScript, error);
     } else {
       console.log(
         "cache hit -- using known healing script instead of calling LLM",

@@ -12,6 +12,20 @@ type GitHubSearchResponse = {
   items?: unknown;
 };
 
+const getErrorDetails = (error: unknown): string => {
+  if (error instanceof Error) {
+    return [
+      `Name: ${error.name}`,
+      `Message: ${error.message}`,
+      "",
+      "Stack:",
+      error.stack ?? "No stack trace available.",
+    ].join("\n");
+  }
+
+  return `Non-Error thrown value: ${String(error)}`;
+};
+
 const getRepository = (): GitHubRepository | undefined => {
   const repository = process.env.GITHUB_REPOSITORY;
   if (repository) {
@@ -58,7 +72,7 @@ const findExistingIssue = async (
   repository: GitHubRepository,
   id: string,
 ): Promise<GitHubIssue | undefined> => {
-  const query = `repo:${repository.owner}/${repository.repo} type:issue in:title ${id}`;
+  const query = `repo:${repository.owner}/${repository.repo} type:issue state:open in:title ${id}`;
   const params = new URLSearchParams({ q: query, per_page: "10" });
   const searchResult = await githubRequest<GitHubSearchResponse>(
     `/search/issues?${params}`,
@@ -80,7 +94,10 @@ const createIssue = async (
   fnName: string,
   id: string,
   healingScript: string,
+  error: unknown,
 ): Promise<GitHubIssue> => {
+  const errorDetails = getErrorDetails(error);
+
   return githubRequest<GitHubIssue>(
     `/repos/${repository.owner}/${repository.repo}/issues`,
     {
@@ -88,7 +105,7 @@ const createIssue = async (
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: `[jit-heal:${id}] ${fnName}`,
-        body: `A verified JIT Heal script was generated for \`${fnName}\`.\n\nFingerprint: \`${id}\`\n\n\`\`\`\n${healingScript}\n\`\`\``,
+        body: `A verified JIT Heal script was generated for \`${fnName}\`.\n\nFingerprint: \`${id}\`\n\n## Original Error\n\n\`\`\`text\n${errorDetails}\n\`\`\`\n\n## Proposed Healing Script\n\n\`\`\`js\n${healingScript}\n\`\`\``,
       }),
     },
   );
@@ -98,6 +115,7 @@ export const openGitHubIssue = (
   fnName: string,
   id: string,
   healingScript: string,
+  error: unknown,
 ): void => {
   void (async () => {
     const repository = getRepository();
@@ -116,7 +134,13 @@ export const openGitHubIssue = (
       return;
     }
 
-    const issue = await createIssue(repository, fnName, id, healingScript);
+    const issue = await createIssue(
+      repository,
+      fnName,
+      id,
+      healingScript,
+      error,
+    );
     console.log(`GitHub issue opened for ${id}: ${issue.html_url}`);
   })().catch((error: unknown) => {
     console.error("GitHub issue creation failed", error);
