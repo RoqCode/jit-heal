@@ -176,6 +176,40 @@ curl 'http://localhost:3000/preview?enabled=1'
 curl 'http://localhost:3000/preview?enabled=yes'
 ```
 
+## Demo 4: External Product API Contract Drift
+
+Routes:
+
+```bash
+curl http://localhost:3000/products/p_1
+curl http://localhost:3000/products/p_1
+curl http://localhost:3000/products/p_1
+```
+
+External API server: `src/dev/mockAlarmServer.ts`
+
+Source function: `src/demo/parseExternalProduct.ts`
+
+The demo dependency server returns a product from `GET /products/:id`. Most responses match the documented contract:
+
+```json
+{ "id": "p_1", "name": "Coffee Beans", "badge": "organic" }
+```
+
+Every third response simulates realistic contract drift by returning `badge` as an array of strings:
+
+```json
+{ "id": "p_1", "name": "Coffee Beans", "badge": ["organic", "fair-trade"] }
+```
+
+The app still validates the external payload against its internal product contract. When validation fails, JIT Heal asks for:
+
+```text
+function heal(rawProduct)
+```
+
+The verified result must be a product object with `id`, `name`, and `badge` as strings. This only prevents the application from crashing; the healed value can still be semantically worse than a proper source-code fix.
+
 ## GitHub Issues
 
 After a healing script is verified for a new failure fingerprint, the app opens an issue titled:

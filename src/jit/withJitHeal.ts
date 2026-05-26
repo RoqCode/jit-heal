@@ -63,7 +63,7 @@ export const withJitHeal = async <T>(
       );
     }
 
-    console.log(`JIT Heal was successful! language: "${verdict.value}"`);
+    console.log(`JIT Heal was successful for ${fnName}`);
     return { value: verdict.value, healed: true };
   }
 };

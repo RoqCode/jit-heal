@@ -5,6 +5,7 @@ import { parseLanguage } from "./middleware/parseLanguage";
 import { getEntry } from "./routes/entryRoute";
 import { getItems } from "./routes/itemsRoute";
 import { getPreview } from "./routes/previewRoute";
+import { getProduct } from "./routes/productsRoute";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -16,6 +17,7 @@ app.get("/health", (_req, res) => {
 app.get("/entry", parseLanguage, getEntry);
 app.get("/items", getItems);
 app.get("/preview", getPreview);
+app.get("/products/:id", getProduct);
 
 app.use(errorHandler);
 
